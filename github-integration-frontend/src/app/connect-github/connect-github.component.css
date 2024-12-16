@@ -1,0 +1,10 @@
+.status {
+  color: green;
+  font-size: 14px;
+}
+
+.mat-mdc-unelevated-button,
+.mat-mdc-unelevated-button .mdc-button__ripple {
+  border-radius: 4px !important;
+  color: "red"
+}

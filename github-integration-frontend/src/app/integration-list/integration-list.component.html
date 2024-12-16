@@ -1,0 +1,79 @@
+<div class="min-h-screen flex items-center flex-col justify-center bg-white">
+  <div class="bg-blue-900 w-screen h-16 flex items-center justify-between">
+    <div class="container mx-auto max-w-6xl p-10">
+      <img
+        src="/assets/logo.png"
+        class="h-10 w-auto filter brightness-0 invert"
+      />
+    </div>
+
+    <div class="text-white mr-36 text-right w-full">
+      <p>Logged in as - {{ userName }}</p>
+    </div>
+  </div>
+  <app-loader [loading]="isLoading"></app-loader>
+  <div class="container h-screen p-10">
+    <div class="flex justify-between items-center mb-2 gap-5">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-select
+          [(value)]="activeIntegration"
+          placeholder="Active Integrations"
+        >
+          @for (integration of integrations; track integration) {
+          <mat-option [value]="integration">{{ integration }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-select
+          [(value)]="selectedCollection"
+          placeholder="Entity"
+          (selectionChange)="onCollectionChange()"
+        >
+          @for (collection of collections; track collection) {
+
+          <mat-option [value]="collection"> {{ collection }} </mat-option>}
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <!-- <mat-label>Search</mat-label> -->
+        <input
+          matInput
+          type="text"
+          placeholder="Search"
+          [(ngModel)]="searchKeyword"
+          (ngModelChange)="onSearchChange($event)"
+        />
+      </mat-form-field>
+    </div>
+
+    <!-- Dropdown with Checkboxes -->
+    <div class="dropdown" *ngIf="columnDefs.length > 0">
+      <button class="dropdown-toggle">Select Columns</button>
+      <div class="dropdown-menu">
+        <div *ngFor="let column of columnDefs">
+          <label >
+            <input type="checkbox" (change)="toggleColumnVisibility($event, column.name)"/>
+            {{ column.name }}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <ag-grid-angular
+        style="width: 100%; height: calc(100% - 120px)"
+        class="ag-theme-alpine"
+        [rowData]="filteredData"
+        [columnDefs]="defaultColumns"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [domLayout]="'autoHeight'"
+        [rowHeight]="40"
+        [tooltipShowDelay]="tooltipShowDelay"
+      ></ag-grid-angular>
+    </div>
+  </div>
+</div>

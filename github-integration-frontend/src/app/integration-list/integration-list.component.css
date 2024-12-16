@@ -1,0 +1,36 @@
+/* table.component.css */
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  
+  .dropdown-toggle {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    padding: 10px;
+    height: 50vh;
+    overflow: auto;
+
+  }
+  
+  .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+  
+  .dropdown-menu label {
+    display: block;
+    margin: 5px 0;
+  }
+  

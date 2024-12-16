@@ -1,0 +1,48 @@
+<div class="min-h-screen flex items-center justify-center bg-white">
+  <div class="container mx-auto h-screen max-w-4xl p-10">
+    <mat-accordion>
+      <app-loader [loading]="isLoading"></app-loader>
+      <mat-expansion-panel (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <div class="flex gap-2 items-center">
+              <img src="assets/githubIcon.png" alt="GitHub" class="w-6 h-6 mr-2" />
+              <span class="font-medium">GitHub</span>
+              <div class="text-green-500 flex items-center" *ngIf="isConnected">
+                <mat-icon class="mr-1">check_circle</mat-icon>
+              </div>
+              <div class="flex items-center" *ngIf="isConnected">
+                <mat-icon class="mr-1">access_time</mat-icon>
+              </div>
+            </div>
+          </mat-panel-title>
+          <mat-panel-description class="w-full flex flex-col justify-end p-2 items-end" *ngIf="isConnected">
+            <p class="m-0 text-[14px] self-end text-stone-400">
+              {{userName}}: Last Synced: {{connectedAt | date: 'YYYY-MM-dd HH:mm:ss a'}}
+            </p>
+            <p class="m-0 text-[14px] self-end text-stone-400">
+              Sync Type: full
+            </p>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="flex flex-col gap-3 items-center pb-3" *ngIf="!isConnected">
+          <button mat-flat-button color="success" (click)="connectToGitHub()">Connect</button>
+          <p class="font-bold text-lg text-[#015cbb]">
+            Connect Sredio to Github
+          </p>
+        </div>
+        <div class="flex gap-3 items-center pt-5 justify-end pb-3" *ngIf="isConnected">
+        
+          <a mat-flat-button href="/integrations">Dashboard</a>
+
+          <button mat-flat-button color="warn" (click)="removeIntegration()">
+            <div class="flex items-center gap-2">
+              <span class="flex items-center">Remove</span>
+              <img src="assets/incognitoIcon.png" alt="Incognito Icon" class="w-auto h-4" />
+            </div>
+          </button>
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </div>
+</div>
