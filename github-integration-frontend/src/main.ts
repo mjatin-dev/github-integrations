@@ -1,3 +1,4 @@
+import 'ag-grid-enterprise';
 import { bootstrapApplication } from '@angular/platform-browser';
 import 'ag-grid-enterprise';
 import { appConfig } from './app/app.config';

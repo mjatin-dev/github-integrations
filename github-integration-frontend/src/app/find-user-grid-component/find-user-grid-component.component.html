@@ -1,0 +1,33 @@
+<div class="min-h-screen flex flex-col items-center justify-center bg-white">
+  <!-- Header -->
+  <div class="bg-blue-900 w-full h-16 flex items-center justify-between">
+    <div class="container mx-auto max-w-6xl px-10">
+      <img
+        src="/assets/logo.png"
+        alt="Logo"
+        class="h-10 w-auto filter brightness-0 invert"
+      />
+    </div>
+    <div class="text-white mr-10 text-right">
+      <p>Logged in as - {{ userName }}</p>
+    </div>
+  </div>
+
+  <!-- Loader -->
+  <app-loader [loading]="isLoading"></app-loader>
+  <div
+    class="min-h-screen flex items-center flex-col bg-white mt-10"
+    style="width: 90%"
+  >      
+  
+  
+    <!-- Data Grid (AG Grid) -->
+    <ag-grid-angular
+      style="width: 100%; height: 200px"
+      class="ag-theme-alpine"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+    >
+    </ag-grid-angular>
+  </div>
+</div>
