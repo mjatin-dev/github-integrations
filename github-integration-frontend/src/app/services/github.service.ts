@@ -1,14 +1,14 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable } from "rxjs";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class GitHubService {
-  private baseUrl = 'http://localhost:3000';
+  private baseUrl = "http://localhost:3000";
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   redirectToGitHub(): void {
     window.location.href = `${this.baseUrl}/auth/github`;
@@ -41,11 +41,9 @@ export class GitHubService {
     return this.http.get(`${this.baseUrl}/github/organizations`);
   }
 
-
   fetchGithubData(): Observable<any> {
     return this.http.get(`${this.baseUrl}/github/fetch-github-data`);
   }
-
 
   fetchDatabaseCollections(): Observable<any> {
     return this.http.get(`${this.baseUrl}/github/fetch-database-collection`);
@@ -55,4 +53,29 @@ export class GitHubService {
     return this.http.get(`${this.baseUrl}/github/fetch-entity-record/${name}`);
   }
 
+  fetchRepoData(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/github/repositories`);
+  }
+
+  fetchTickets(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/github/tickets`);
+  }
+
+  fetchTicketById(ticketId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/github/tickets/${ticketId}`);
+  }
+
+  searchRecord(searchParam: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/github/search/${searchParam}`);
+  }
+
+  filterRecord(
+    startDate: Date,
+    endDate: Date,
+    status: string
+  ): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/github/filter?startDate=${startDate}&endDate=${endDate}&status=${status}`
+    );
+  }
 }

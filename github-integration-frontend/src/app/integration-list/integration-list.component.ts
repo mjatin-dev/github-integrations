@@ -1,3 +1,4 @@
+import "ag-grid-enterprise";
 import { Component, OnInit } from "@angular/core";
 import { AgGridModule } from "ag-grid-angular";
 import "ag-grid-community/styles/ag-grid.css";
@@ -11,7 +12,12 @@ import { MatCardModule } from "@angular/material/card";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatToolbarModule } from "@angular/material/toolbar";
 import { MatMenuModule } from "@angular/material/menu";
-import { FormsModule } from "@angular/forms";
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+} from "@angular/forms";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule } from "@angular/material/core"; // For Datepicker
@@ -20,7 +26,15 @@ import { LoaderComponent } from "../loader/loader.component";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { CommonModule } from "@angular/common";
 import { GitHubService } from "../services/github.service";
-import { IServerSideDatasource } from "ag-grid-community";
+import {
+  IServerSideDatasource,
+  IFilterParams,
+  IFilter,
+} from "ag-grid-community";
+import { ModuleRegistry, RowGroupingModule } from "ag-grid-enterprise";
+import { ImageCellRenderer } from "../image-component/image-component.component";
+
+ModuleRegistry.registerModules([RowGroupingModule]);
 
 @Component({
   standalone: true,
@@ -42,12 +56,13 @@ import { IServerSideDatasource } from "ag-grid-community";
     MatSnackBarModule,
     LoaderComponent,
     CommonModule,
+    ReactiveFormsModule,
   ],
   selector: "app-integration-list",
   templateUrl: "./integration-list.component.html",
   styleUrls: ["./integration-list.component.css"],
 })
-export class IntegrationListComponent implements OnInit {
+export class IntegrationListComponent implements IFilter, OnInit {
   collections = []; // Entity Dropdown
   integrations: string[] = ["GitHub"]; // Only one option
   activeIntegration: string = "GitHub";
@@ -61,6 +76,23 @@ export class IntegrationListComponent implements OnInit {
   rowData: any[] = [];
   filteredData: any[] = [];
   columnDefs: any[] = [];
+  private params!: IFilterParams;
+  startDate!: string;
+  endDate!: string;
+  searchValue: string | undefined;
+
+  filterForm!: FormGroup;
+  selectedFacets: { user: string | null; repo: string | null } = {
+    user: null,
+    repo: null,
+  };
+
+  facets = {
+    users: ["Alice", "Bob", "Charlie"],
+    repos: ["Repo1", "Repo2", "Repo3"],
+    statuses: ["Open", "Closed", "Merged", "Draft"],
+  };
+
   defaultColumns: any[] = [];
 
   defaultColDef = {
@@ -69,15 +101,59 @@ export class IntegrationListComponent implements OnInit {
     resizable: true,
   };
 
+  searchResults: any[] = [];
+
   constructor(
     private githubService: GitHubService,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    private fb: FormBuilder
+  ) {
+    // Initialize the filter form
+    this.filterForm = this.fb.group({
+      startDate: [""],
+      endDate: [""],
+      status: [""],
+    });
+  }
 
   ngOnInit() {
     // Simulate fetching collection data and columns dynamically
     this.fetchCollectionData();
     this.checkConnection();
+  }
+
+  /** Called when the filter is initialized by AG Grid */
+  init(params: IFilterParams): void {
+    this.params = params;
+
+    // Optionally, initialize default filter values
+    this.startDate = "";
+    this.endDate = "";
+  }
+
+  /** Determines if the filter is active */
+  isFilterActive(): boolean {
+    return !!this.startDate || !!this.endDate;
+  }
+
+  /** Returns the current filter model */
+  getModel(): any {
+    return { startDate: this.startDate, endDate: this.endDate };
+  }
+
+  /** Sets the filter model from AG Grid */
+  setModel(model: any): void {
+    this.startDate = model?.startDate || "";
+    this.endDate = model?.endDate || "";
+  }
+
+  doesFilterPass(params: any): boolean {
+    // Implement your logic here
+    return true;
+  }
+
+  onDateChanged(): void {
+    this.params.filterChangedCallback();
   }
 
   // Fetch data based on selected collection
@@ -92,19 +168,53 @@ export class IntegrationListComponent implements OnInit {
         .subscribe(
           (response) => {
             const { columns, data } = response;
-            const updateColumns = columns.map((field: any) => ({
-              name: field,
-              field: field,
-              flex: 1,
-            }));
+            const updateColumns = columns.map((field: any) => {
+              return {
+                name: field,
+                field: field,
+                filter: true,
+                cellRenderer:
+                  field === "avatar_url" ? ImageCellRenderer : undefined,
+                rowGroup: data.some(
+                  (item: any) =>
+                    (typeof item[field] === "object" &&
+                      !Array.isArray(item[field])) ||
+                    Array.isArray(item[field])
+                ), // Check if value is an object
+                hide: data.some(
+                  (item: any) =>
+                    (typeof item[field] === "object" &&
+                      !Array.isArray(item[field])) ||
+                    Array.isArray(item[field])
+                ),
+                valueGetter: (params: any) => {
+                  const value = params.data[field];
+                  if (typeof value === "object") {
+                    return JSON.stringify(value);
+                  }
+                  return value;
+                },
+                flex: 1,
+                filterFramework: "dateRangeFilter", // Custom filter framework
+              };
+            });
 
-            this.columnDefs = updateColumns.slice(9, updateColumns.length);
-            this.defaultColumns = updateColumns.slice(0, 8);
+            this.columnDefs = updateColumns.slice(12, updateColumns.length);
+            this.defaultColumns = updateColumns.slice(0, 11);
 
-            const transformNestedData = this.extractnestedobject();
+            const updatedValue = data.map((item: any) => {
+              const keys = Object.keys(item).map((keyItem): any => {
+                if (typeof item[keyItem] === "object") {
+                  return { [keyItem]: JSON.stringify(item[keyItem]) };
+                } else {
+                  return { [keyItem]: item[keyItem] };
+                }
+              });
+              return Object.assign({}, ...keys);
+            });
 
-            this.rowData = transformNestedData(data);
-            this.filteredData = transformNestedData(data);
+            this.rowData = updatedValue;
+            this.filteredData = updatedValue;
             this.isLoading = false;
           },
           (error) => {
@@ -143,11 +253,57 @@ export class IntegrationListComponent implements OnInit {
 
   // Search data in table
   onSearchChange(keyword: string) {
-    this.filteredData = this.rowData.filter((item) =>
-      Object.values(item).some((val: any) =>
-        val.toString().toLowerCase().includes(keyword.toLowerCase())
-      )
-    );
+    if (keyword !== "") {
+      if (keyword.toLocaleLowerCase() === "tickets") {
+        this.getTickets();
+        this.searchValue = keyword.toLocaleLowerCase();
+      } else {
+        this.githubService.searchRecord(keyword.toLowerCase()).subscribe(
+          (response) => {
+            const { columns, data } = response.data;
+            const updateColumns = columns?.map((field: any) => ({
+              name: field,
+              field: field,
+              filter: true,
+              rowGroupIndex: 1,
+              flex: 1,
+              filterFramework: "dateRangeFilter", // Custom filter framework
+            }));
+
+            this.columnDefs = updateColumns?.slice(9, updateColumns.length);
+            this.defaultColumns = updateColumns?.slice(0, 8);
+
+            const updatedValue = data.map((item: any) => {
+              const keys = Object.keys(item).map((keyItem): any => {
+                if (typeof item[keyItem] === "object") {
+                  return { [keyItem]: JSON.stringify(item[keyItem]) };
+                } else {
+                  return { [keyItem]: item[keyItem] };
+                }
+              });
+              return Object.assign({}, ...keys);
+            });
+
+            this.rowData = updatedValue;
+            this.filteredData = updatedValue;
+            this.isLoading = false;
+          },
+          (error) => {
+            console.error("Error fetching database collections:", error);
+            this.snackBar.open("Error fetching database collections", "Close", {
+              duration: 3000,
+            });
+            this.isLoading = false;
+          }
+        );
+
+        // this.filteredData = this.rowData.filter((item) =>
+        //   Object.values(item).some((val: any) =>
+        //     val.toString().toLowerCase().includes(keyword.toLowerCase())
+        //   )
+        // );
+      }
+    }
   }
 
   // Remove integration
@@ -181,6 +337,30 @@ export class IntegrationListComponent implements OnInit {
     }
   }
 
+  // Fetch tickets
+  getTickets() {
+    this.isLoading = true;
+    this.githubService.fetchTickets().subscribe(
+      (response) => {
+        this.searchResults = response;
+        this.isLoading = false;
+      },
+      (error) => {
+        console.error("Error fetching tickets:", error);
+        this.snackBar.open("Error fetching tickets", "Close", {
+          duration: 3000,
+        });
+        this.isLoading = false;
+      }
+    );
+  }
+
+  // Path: github-integration-frontend/src/app/find-user-grid-component/find-user-grid-component.component.ts
+  getFindUserLink(ticketId: string): string {
+    // This will route to the AG Grid page with the ticketId as a query parameter
+    return `/find-user?ticketId=${ticketId}`;
+  }
+
   // Extract nested object
   private extractnestedobject() {
     return (data: any[]): any[] =>
@@ -204,5 +384,156 @@ export class IntegrationListComponent implements OnInit {
 
         return transform(item);
       });
+  }
+
+  filterByFacet(facet: "user" | "repo", value: string): void {
+    this.selectedFacets[facet] =
+      this.selectedFacets[facet] === value ? null : value;
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    this.isLoading = true;
+    const { startDate, endDate, status } = this.filterForm.value;
+    this.githubService.filterRecord(startDate, endDate, status).subscribe(
+      (response) => {
+        this.isLoading = false;
+        const { columns, data } = response;
+        const updateColumns = columns.map((field: any) => ({
+          name: field,
+          field: field,
+          filter: true,
+          rowGroupIndex: 1,
+          flex: 1,
+          rowGroup: data.some(
+            (item: any) =>
+              (typeof item[field] === "object" &&
+                !Array.isArray(item[field])) ||
+              Array.isArray(item[field])
+          ), // Check if value is an object
+          hide: data.some(
+            (item: any) =>
+              (typeof item[field] === "object" &&
+                !Array.isArray(item[field])) ||
+              Array.isArray(item[field])
+          ),
+          valueGetter: (params: any) => {
+            const value = params.data[field];
+            if (typeof value === "object") {
+              return JSON.stringify(value);
+            }
+            return value;
+          },
+          filterFramework: "dateRangeFilter", // Custom filter framework
+        }));
+
+        this.columnDefs = updateColumns.slice(12, updateColumns.length);
+        this.defaultColumns = updateColumns.slice(0, 11);
+
+        const updatedValue = data.map((item: any) => {
+          const keys = Object.keys(item).map((keyItem): any => {
+            if (typeof item[keyItem] === "object") {
+              return { [keyItem]: JSON.stringify(item[keyItem]) };
+            } else {
+              return { [keyItem]: item[keyItem] };
+            }
+          });
+          return Object.assign({}, ...keys);
+        });
+
+        this.rowData = updatedValue;
+        this.filteredData = updatedValue;
+      },
+      (error) => {
+        console.error("Error fetching GitHub collections:", error);
+        this.snackBar.open("Error fetching GitHub collections", "Close", {
+          duration: 3000,
+        });
+        this.isLoading = false;
+        this.columnDefs = [];
+        this.rowData = [];
+        this.filteredData = [];
+      }
+    );
+  }
+
+  clearFilter(): void {
+    this.isLoading = true;
+    const fetchCollectionName = this.orginazation.find(
+      (item: any) => item.name === this.selectedCollection
+    );
+    if (fetchCollectionName) {
+      this.githubService
+        .fetchGithubCollections(fetchCollectionName.name)
+        .subscribe(
+          (response) => {
+            const { columns, data } = response;
+            const updateColumns = columns.map((field: any) => {
+              return {
+                name: field,
+                field: field,
+                filter: true,
+                cellRenderer:
+                  field === "avatar_url" ? ImageCellRenderer : undefined,
+                rowGroup: data.some(
+                  (item: any) =>
+                    (typeof item[field] === "object" &&
+                      !Array.isArray(item[field])) ||
+                    Array.isArray(item[field])
+                ), // Check if value is an object
+                hide: data.some(
+                  (item: any) =>
+                    (typeof item[field] === "object" &&
+                      !Array.isArray(item[field])) ||
+                    Array.isArray(item[field])
+                ),
+                valueGetter: (params: any) => {
+                  const value = params.data[field];
+                  if (typeof value === "object") {
+                    return JSON.stringify(value);
+                  }
+                  return value;
+                },
+                flex: 1,
+                filterFramework: "dateRangeFilter", // Custom filter framework
+              };
+            });
+
+            this.columnDefs = updateColumns.slice(12, updateColumns.length);
+            this.defaultColumns = updateColumns.slice(0, 11);
+
+            const updatedValue = data.map((item: any) => {
+              const keys = Object.keys(item).map((keyItem): any => {
+                if (typeof item[keyItem] === "object") {
+                  return { [keyItem]: JSON.stringify(item[keyItem]) };
+                } else {
+                  return { [keyItem]: item[keyItem] };
+                }
+              });
+              return Object.assign({}, ...keys);
+            });
+
+            this.rowData = updatedValue;
+            this.filteredData = updatedValue;
+            this.isLoading = false;
+          },
+          (error) => {
+            console.error("Error fetching GitHub collections:", error);
+            this.snackBar.open("Error fetching GitHub collections", "Close", {
+              duration: 3000,
+            });
+            this.isLoading = false;
+            this.columnDefs = [];
+            this.rowData = [];
+            this.filteredData = [];
+          }
+        );
+    }
+  }
+
+  clearSearchResults(): void {
+    this.searchResults = [];
+    this.searchKeyword = "";
+    this.fetchCollectionData();
   }
 }

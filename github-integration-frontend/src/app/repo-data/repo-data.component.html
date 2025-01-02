@@ -1,0 +1,46 @@
+<div class="min-h-screen flex flex-col items-center justify-center bg-white">
+  <!-- Header -->
+  <div class="bg-blue-900 w-full h-16 flex items-center justify-between">
+    <div class="container mx-auto max-w-6xl px-10">
+      <img
+        src="/assets/logo.png"
+        alt="Logo"
+        class="h-10 w-auto filter brightness-0 invert"
+      />
+    </div>
+    <div class="text-white mr-10 text-right">
+      <p>Logged in as - {{ userName }}</p>
+    </div>
+  </div>
+
+  <div class="container h-screen p-10">
+    <!-- Loader -->
+    <app-loader [loading]="isLoading"></app-loader>
+
+    <div class="dropdown" *ngIf="columnDefs.length > 0">
+      <button class="dropdown-toggle">Select Columns</button>
+      <div class="dropdown-menu">
+        <div *ngFor="let column of columnDefs">
+          <label>
+            <input
+              type="checkbox"
+              (change)="toggleColumnVisibility($event, column.name)"
+            />
+            {{ column.name }}
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="ag-theme-alpine" style="height: 500px; width: 100%">
+      <ag-grid-angular
+        class="ag-theme-alpine"
+        [rowData]="rowData"
+        [columnDefs]="defaultColumns"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [domLayout]="'autoHeight'"
+        [rowHeight]="40"
+      ></ag-grid-angular>
+    </div>
+  </div>
+</div>
