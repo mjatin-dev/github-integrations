@@ -1,5 +1,13 @@
 import { Octokit } from "octokit";
 import { getDatabaseClient } from "../helpers/database.helper.js";
+import {
+  aggregateRepositoryData,
+  findCommits,
+  findPullRequests,
+  getTicketById,
+  getTickets,
+  searchAllCollection,
+} from "../helpers/githubApi.helper.js";
 
 /**
  * Get GitHub Integration Status
@@ -10,10 +18,9 @@ import { getDatabaseClient } from "../helpers/database.helper.js";
 export const getGitHubStatus = async (req, res) => {
   try {
     try {
-
       const { client, db } = getDatabaseClient();
       const collection = db.collection("GitHubIntegration");
-      
+
       const integration = await collection.findOne({
         "user.id": req.user.userId,
       });
@@ -165,7 +172,7 @@ export const fetchCommits = async (octokit, repo) => {
       await collection.findOneAndUpdate(
         { sha: commit.sha },
         {
-          $set: commit,
+          $set: { ...commit, repo_id: repo.id },
         },
         { upsert: true, new: true }
       );
@@ -203,14 +210,13 @@ export const fetchPullRequests = async (octokit, repo) => {
       await collection.findOneAndUpdate(
         { id: pr.id }, // Match the PR by ID
         {
-          $set: pr,
+          $set: { ...pr, repo_id: repo.id },
         },
         { upsert: true, new: true } // Insert or update the document
       );
 
       console.log(`Pull Request saved: ${pr.title}`);
     }
-
   } catch (error) {
     console.error("Error fetching pull requests:", error.message);
     throw new Error(error.message); // Propagate the error for the caller to handle
@@ -243,7 +249,7 @@ export const fetchIssues = async (octokit, repo) => {
       await collection.findOneAndUpdate(
         { id: issue.id },
         {
-          $set: issue,
+          $set: { ...issue, repo_id: repo.id },
         },
         { upsert: true, new: true }
       );
@@ -306,7 +312,6 @@ export const fetchUsers = async (octokit, org) => {
 
       console.log(`User saved: ${user.login}`);
     }
-
   } catch (error) {
     console.error("Error fetching users:", error.message);
     throw new Error(error.message); // Propagate the error for the caller to handle
@@ -330,10 +335,10 @@ export const fetchDatabaseEntities = async (req, res) => {
 };
 
 /**
- * 
- * @param {*} req 
- * @param {*} res 
- * @returns 
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns
  */
 export const fetchRecordsByEntityName = async (req, res) => {
   try {
@@ -364,6 +369,107 @@ export const fetchRecordsByEntityName = async (req, res) => {
         item?.author ? { ...item, author: item.author.login } : item
       ),
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ */
+export const fetchRepoData = async (req, res) => {
+  try {
+    const { repoId } = req.params;
+    const { page = 1, limit = 10, filter } = req.query;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const filters = filter ? JSON.parse(filter) : {};
+
+    const data = await aggregateRepositoryData(
+      18150075,
+      pageNum,
+      limitNum,
+      filters
+    );
+    res
+      .status(200)
+      .json({
+        data: data?.length ? data : [],
+        columns: data?.length ? Object.keys(data[0]) : [],
+      });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/*
+ * Fetch tickets
+ * @param {*} req
+ * @param {*} res
+ */
+export const fetchTickets = async (req, res) => {
+  try {
+    const data = await getTickets();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ */
+export const fetchTicketById = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const data = await getTicketById(ticketId);
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ */
+export const searchRecordInCollection = async (req, res) => {
+  try {
+    const { searchTerm } = req?.params;
+    const data = await searchAllCollection(searchTerm);
+    res.status(200).json({ data: data });
+  } catch (error) {
+    console.log("error", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ */
+export const filterRecord = async (req, res) => {
+  try {
+    let result = [];
+    const { startDate, endDate, status } = req.query;
+    console.log(startDate, endDate, status);
+    if (status) {
+      const pullRequests = await findPullRequests(status);
+      result.push(...pullRequests);
+    }
+    if (startDate && endDate) {
+      const commits = await findCommits(startDate, endDate);
+      result.push(...commits);
+    }
+    console.log(result[0]);
+    res.status(200).json({ data: result, columns: Object.keys(result[0]) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

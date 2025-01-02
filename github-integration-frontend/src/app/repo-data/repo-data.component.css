@@ -1,0 +1,48 @@
+.ag-theme-alpine {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+  
+  .ag-theme-alpine .ag-header-cell {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+
+  .dropdown {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  
+  .dropdown-toggle {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    padding: 10px;
+    height: auto;
+    max-width: 50vh;
+    overflow: auto;
+    width: 150px;
+  }
+  
+  .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+  
+  .dropdown-menu label {
+    display: block;
+    margin: 5px 0;
+  }
+
+  
+  

@@ -49,20 +49,96 @@
       </mat-form-field>
     </div>
 
+    <div *ngIf="searchResults?.length && searchValue === 'tickets'">
+      <button class="close-icon" (click)="clearSearchResults()">
+        &#10006;
+        <!-- You can replace this with any other icon -->
+      </button>
+
+      <div *ngFor="let result of searchResults" class="search-result">
+        <a
+          [href]="getFindUserLink(result.id)"
+          target="_blank"
+          class="find-user-link"
+        >
+          Find User
+        </a>
+        <span>{{ result?.title }}</span>
+      </div>
+    </div>
+
+    <!-- Custom Filters Section -->
+    <div class="bg-white" style="width: 100%" *ngIf="filteredData.length > 0">
+      <h2 class="text-2xl font-bold text-left mb-2">Custom Filters</h2>
+      <form [formGroup]="filterForm" class="filter-form flex gap-3">
+        <!-- Date Range -->
+        <mat-form-field appearance="outline">
+          <input
+            placeholder="Start Date"
+            matInput
+            [matDatepicker]="startPicker"
+            formControlName="startDate"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="startPicker"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <input
+            matInput
+            placeholder="End Date"
+            [matDatepicker]="endPicker"
+            formControlName="endDate"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="endPicker"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
+
+        <!-- Status Filter -->
+        <mat-form-field appearance="outline">
+          <mat-select formControlName="status" placeholder="Status">
+            <mat-option
+              *ngFor="let status of facets.statuses"
+              [value]="status"
+              >{{ status }}</mat-option
+            >
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Apply Filters Button -->
+        <button mat-raised-button color="primary" (click)="applyFilters()">
+          Apply Filters
+        </button>
+
+        <button mat-raised-button color="primary" (click)="clearFilter()">
+          Clear
+        </button>
+      </form>
+    </div>
+
     <!-- Dropdown with Checkboxes -->
     <div class="dropdown" *ngIf="columnDefs.length > 0">
       <button class="dropdown-toggle">Select Columns</button>
       <div class="dropdown-menu">
         <div *ngFor="let column of columnDefs">
-          <label >
-            <input type="checkbox" (change)="toggleColumnVisibility($event, column.name)"/>
+          <label>
+            <input
+              type="checkbox"
+              (change)="toggleColumnVisibility($event, column.name)"
+            />
             {{ column.name }}
           </label>
         </div>
       </div>
     </div>
 
-    <div>
+    <div *ngIf="searchResults?.length === 0">
       <ag-grid-angular
         style="width: 100%; height: calc(100% - 120px)"
         class="ag-theme-alpine"
@@ -73,6 +149,10 @@
         [domLayout]="'autoHeight'"
         [rowHeight]="40"
         [tooltipShowDelay]="tooltipShowDelay"
+        [enableRangeSelection]="true"
+        [rowGroupPanelShow]="'always'"
+        [pivotPanelShow]="'always'"
+        [cellSelection]="true"
       ></ag-grid-angular>
     </div>
   </div>

@@ -1,36 +1,93 @@
 /* table.component.css */
 .dropdown {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 10px;
-  }
-  
-  .dropdown-toggle {
-    padding: 8px 16px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .dropdown-menu {
-    display: none;
-    position: absolute;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 10000;
-    padding: 10px;
-    height: 50vh;
-    overflow: auto;
+  position: relative;
+  display: inline-block;
+  margin-bottom: 10px;
+}
 
-  }
-  
-  .dropdown:hover .dropdown-menu {
-    display: block;
-  }
-  
-  .dropdown-menu label {
-    display: block;
-    margin: 5px 0;
-  }
-  
+.dropdown-toggle {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  padding: 10px;
+  height: auto;
+  max-width: 50vh;
+  overflow: auto;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu label {
+  display: block;
+  margin: 5px 0;
+}
+
+.search-result {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.find-user-link {
+  margin-right: 10px;
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.date-range-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+
+.date-range-filter {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  width: 200px;
+  gap: 10px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.filter-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-input:focus {
+  border-color: #0078d4;
+}
